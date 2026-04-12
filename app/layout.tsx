@@ -1,14 +1,17 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { SessionProvider } from 'next-auth/react'
+import { ThemeProvider } from 'next-themes'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'StudyAI - AI-Powered Learning Platform',
+  description: 'Learn smarter with AI-generated summaries, quizzes, flashcards, and personalized guidance',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -35,10 +38,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <SessionProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+            {children}
+            <Toaster position="top-center" richColors />
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )
