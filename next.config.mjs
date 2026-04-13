@@ -23,9 +23,6 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    reactCompiler: true,
-  },
   env: {
     NEXT_PUBLIC_APP_NAME: 'StudyAI',
   },

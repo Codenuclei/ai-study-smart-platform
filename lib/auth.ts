@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import NextAuth, { type NextAuthOptions } from 'next-auth';
+import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { users } from './schema';
 import { eq } from 'drizzle-orm';
@@ -10,7 +10,7 @@ import * as schema from './schema';
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
-export const authOptions: NextAuthOptions = {
+export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -71,9 +71,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
-
-export const handler = NextAuth(authOptions);
+});

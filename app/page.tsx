@@ -1,6 +1,8 @@
-import { getSession } from '@/lib/auth-utils';
-import { redirect } from 'next/navigation';
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -13,17 +15,18 @@ import {
   CheckCircle,
 } from 'lucide-react';
 
-export const metadata = {
-  title: 'StudyAI - AI-Powered Learning Platform',
-  description: 'Learn smarter with AI-generated summaries, quizzes, flashcards, and personalized guidance',
-};
+export default function Home() {
+  const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
 
-export default async function Home() {
-  const session = await getSession();
+  useEffect(() => {
+    setMounted(true);
+    if (session?.user) {
+      window.location.href = '/dashboard';
+    }
+  }, [session]);
 
-  if (session?.user) {
-    redirect('/dashboard');
-  }
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
