@@ -6,6 +6,8 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import './globals.css'
 
+// Fixed NextAuth v5 compatibility - v2
+
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
