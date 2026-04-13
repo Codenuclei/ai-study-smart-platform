@@ -9,9 +9,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.53",
-    "@ai-sdk/google": "^0.0.59",
-    "@ai-sdk/openai": "^0.0.67",
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@ai-sdk/google": "^3.0.62",
+    "@ai-sdk/openai": "^3.0.0",
     "@hookform/resolvers": "^3.9.1",
     "@neondatabase/serverless": "^0.9.5",
     "@radix-ui/react-accordion": "1.2.12",

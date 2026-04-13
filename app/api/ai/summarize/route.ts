@@ -2,12 +2,6 @@ import { streamText } from 'ai';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
 
-// Get the model from environment or use OpenAI as default
-const getModel = () => {
-  const modelString = process.env.AI_MODEL || 'openai/gpt-4-turbo';
-  return modelString;
-};
-
 export async function POST(req: Request) {
   try {
     const session = await getSession();
@@ -37,15 +31,15 @@ ${content}
 
 Provide a well-structured summary with clear sections and key takeaways.`;
 
-    const result = streamText({
-      model: getModel(),
+    const result = await streamText({
+      model: 'openai/gpt-4-turbo',
       system: 'You are an expert educational content summarizer. Create clear, accurate, and well-organized summaries.',
       prompt,
       temperature: 0.7,
-      maxTokens: 1000,
+      maxOutputTokens: 1000,
     });
 
-    return (await result).toTextStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error summarizing content:', error);
     return NextResponse.json(

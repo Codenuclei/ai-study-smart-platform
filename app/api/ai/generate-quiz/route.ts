@@ -1,12 +1,7 @@
-import { streamText, Output } from 'ai';
+import { generateText } from 'ai';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
-const getModel = () => {
-  const modelString = process.env.AI_MODEL || 'openai/gpt-4-turbo';
-  return modelString;
-};
 
 const quizSchema = z.object({
   questions: z.array(
@@ -19,7 +14,6 @@ const quizSchema = z.object({
       difficulty: z.enum(['easy', 'medium', 'hard']),
     })
   ),
-  summary: z.string().nullable(),
 });
 
 export async function POST(req: Request) {
@@ -43,19 +37,24 @@ export async function POST(req: Request) {
 Content:
 ${content}
 
-Generate quiz questions that test comprehension and critical thinking. Each question should have 4 options with only one correct answer. Include an explanation for the correct answer.`;
+Generate quiz questions that test comprehension and critical thinking. Each question should have 4 options with only one correct answer. Include an explanation for the correct answer.
 
-    const result = streamText({
-      model: getModel(),
-      system: 'You are an expert educator creating quiz questions. Generate clear, educational quiz questions with accurate answers and explanations.',
+Respond with valid JSON only.`;
+
+    const result = await generateText({
+      model: 'openai/gpt-4-turbo',
+      system: 'You are an expert educator creating quiz questions. Generate clear, educational quiz questions with accurate answers and explanations. Return valid JSON only.',
       prompt,
-      output: Output.object({
-        schema: quizSchema,
-      }),
       temperature: 0.7,
+      maxOutputTokens: 2000,
     });
 
-    return (await result).toTextStreamResponse();
+    try {
+      const parsed = JSON.parse(result.text);
+      return NextResponse.json(parsed);
+    } catch {
+      return NextResponse.json({ text: result.text });
+    }
   } catch (error) {
     console.error('Error generating quiz:', error);
     return NextResponse.json(

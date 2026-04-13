@@ -2,11 +2,6 @@ import { streamText } from 'ai';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
 
-const getModel = () => {
-  const modelString = process.env.AI_MODEL || 'openai/gpt-4-turbo';
-  return modelString;
-};
-
 export async function POST(req: Request) {
   try {
     const session = await getSession();
@@ -23,8 +18,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = streamText({
-      model: getModel(),
+    const result = await streamText({
+      model: 'openai/gpt-4-turbo',
       system: `You are StudyAI, an expert study companion and educational assistant. Your role is to:
 1. Help students understand complex concepts and topics
 2. Answer study-related questions clearly and comprehensively
@@ -39,10 +34,10 @@ Always explain concepts in an easy-to-understand way and break down complex idea
         content: msg.content,
       })),
       temperature: 0.7,
-      maxTokens: 1500,
+      maxOutputTokens: 1500,
     });
 
-    return (await result).toTextStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Error in chat:', error);
     return NextResponse.json(
