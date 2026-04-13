@@ -1,20 +1,15 @@
-import { streamText, Output } from 'ai';
+import { generateText } from 'ai';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
-const getModel = () => {
-  const modelString = process.env.AI_MODEL || 'openai/gpt-4-turbo';
-  return modelString;
-};
 
 const flashcardsSchema = z.object({
   flashcards: z.array(
     z.object({
       id: z.string(),
-      front: z.string().describe('Question or term on the front of the card'),
-      back: z.string().describe('Answer or definition on the back of the card'),
-      category: z.string().describe('Category or topic of the flashcard'),
+      front: z.string(),
+      back: z.string(),
+      category: z.string(),
     })
   ),
 });
@@ -45,19 +40,22 @@ Format each flashcard with:
 - Back: A concise answer or definition
 - Category: The topic category
 
-Flashcards should be memorable and help with spaced repetition learning.`;
+Respond with valid JSON only containing a flashcards array.`;
 
-    const result = streamText({
-      model: getModel(),
-      system: 'You are an expert in creating educational flashcards. Generate clear, effective flashcards that promote learning and retention.',
+    const result = await generateText({
+      model: 'openai/gpt-4-turbo',
+      system: 'You are an expert in creating educational flashcards. Generate clear, effective flashcards that promote learning and retention. Return valid JSON only.',
       prompt,
-      output: Output.object({
-        schema: flashcardsSchema,
-      }),
       temperature: 0.7,
+      maxOutputTokens: 2000,
     });
 
-    return (await result).toTextStreamResponse();
+    try {
+      const parsed = JSON.parse(result.text);
+      return NextResponse.json(parsed);
+    } catch {
+      return NextResponse.json({ text: result.text });
+    }
   } catch (error) {
     console.error('Error generating flashcards:', error);
     return NextResponse.json(
