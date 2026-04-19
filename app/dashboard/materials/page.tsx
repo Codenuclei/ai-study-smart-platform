@@ -1,63 +1,102 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardHeader } from '@/components/dashboard/header';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, Trash2, Eye, Wand2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FileText, Trash2, Eye, Sparkles, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SourceSelector } from '@/components/dashboard/source-selector';
+import ReactMarkdown from 'react-markdown';
 
 interface Material {
   id: string;
   title: string;
   content: string;
-  createdAt: Date;
-  summary?: string;
-  summaryCount: number;
-  quizCount: number;
+  fileUrl?: string;
+  createdAt: string;
 }
 
 export default function MaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
 
-  const handleAddMaterial = async () => {
-    if (!title.trim() || !content.trim()) {
-      toast.error('Please enter both title and content');
-      return;
-    }
+  const [activeContent, setActiveContent] = useState('');
+  const [activeTitle, setActiveTitle] = useState('');
+  const [activeFileUrl, setActiveFileUrl] = useState<string | undefined>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [viewMaterial, setViewMaterial] = useState<Material | null>(null);
 
-    setIsUploading(true);
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  const fetchMaterials = async () => {
     try {
-      // TODO: Save to database via API
-      const newMaterial: Material = {
-        id: Date.now().toString(),
-        title,
-        content,
-        createdAt: new Date(),
-        summaryCount: 0,
-        quizCount: 0,
-      };
-
-      setMaterials([newMaterial, ...materials]);
-      setTitle('');
-      setContent('');
-      toast.success('Material added successfully!');
-    } catch (error) {
-      toast.error('Failed to add material');
+      const res = await fetch('/api/materials');
+      const data = await res.json();
+      setMaterials(data || []);
+    } catch (e) {
+      toast.error('Failed to load library');
     } finally {
-      setIsUploading(false);
+      setIsFetching(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    setMaterials(materials.filter((m) => m.id !== id));
-    toast.success('Material deleted');
+  const handleAddMaterial = async () => {
+    if (!activeContent.trim()) {
+      toast.error('No content to save');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: activeTitle || `Document: ${activeContent.slice(0, 30)}...`,
+          content: activeContent,
+          fileUrl: activeFileUrl,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success('Material added to library');
+        fetchMaterials();
+        setShowAddDialog(false);
+        setActiveContent('');
+        setActiveTitle('');
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      toast.error('Failed to add material');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Remove this material? Associated quizzes and cards will be deleted.')) return;
+    try {
+      const res = await fetch('/api/materials', {
+        method: 'DELETE', // Assuming DELETE is implemented similarly
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setMaterials(materials.filter((m) => m.id !== id));
+        toast.success('Material removed');
+      }
+    } catch (error) {
+      toast.error('Failed to delete');
+    }
   };
 
   const filteredMaterials = materials.filter(
@@ -73,116 +112,132 @@ export default function MaterialsPage() {
         <DashboardSidebar />
         <main className="flex-1">
           <div className="container max-w-7xl py-8 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold mb-8">Study Materials</h1>
+            <div className="flex justify-between items-center mb-8">
+              <h1 className="text-3xl font-bold">Study Library</h1>
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" /> Index New Document
+              </Button>
+            </div>
 
-            {/* Upload Section */}
-            <Card className="mb-8 gradient-border">
-              <CardHeader>
-                <CardTitle>Add New Material</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label htmlFor="title" className="text-sm font-medium">
-                    Title
-                  </label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Chapter 5: Photosynthesis"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="mt-2"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="content" className="text-sm font-medium">
-                    Content
-                  </label>
-                  <textarea
-                    id="content"
-                    placeholder="Paste your notes here..."
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="w-full h-32 mt-2 p-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleAddMaterial}
-                  disabled={isUploading}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {isUploading ? 'Adding...' : 'Add Material'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Materials List */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <CardTitle>Your Materials</CardTitle>
-                <Input
-                  placeholder="Search materials..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-48"
-                />
-              </CardHeader>
-              <CardContent>
-                {filteredMaterials.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-muted-foreground mb-4">No materials yet. Add one to get started!</p>
-                    <Button variant="outline">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload First Material
-                    </Button>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add to Library</DialogTitle>
+                  <DialogDescription>
+                    Provide text or upload a PDF to index it for generation across the platform.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold opacity-70">Library Title (Optional)</label>
+                    <Input
+                      placeholder="e.g. Biology Chapter 4"
+                      value={activeTitle}
+                      onChange={(e) => setActiveTitle(e.target.value)}
+                    />
                   </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {filteredMaterials.map((material) => (
-                      <div
-                        key={material.id}
-                        className="flex items-start justify-between p-4 border border-border/40 rounded-lg hover:bg-muted/30 transition"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-primary" />
-                            <div>
-                              <h3 className="font-semibold">{material.title}</h3>
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {material.content}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex gap-4 mt-3 text-sm text-muted-foreground">
-                            <span>📚 {material.summaryCount} summaries</span>
-                            <span>❓ {material.quizCount} quizzes</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" title="Generate AI Content">
-                            <Wand2 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" title="View Material">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(material.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+                  <SourceSelector
+                    onSourceSelected={(content, id, url) => {
+                      setActiveContent(content);
+                      setActiveFileUrl(url);
+                    }}
+                    isLoading={isLoading}
+                  />
+                  <Button
+                    onClick={handleAddMaterial}
+                    disabled={isLoading || !activeContent}
+                    className="w-full font-semibold"
+                  >
+                    {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Indexing...</> : 'Save to Library'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!viewMaterial} onOpenChange={open => !open && setViewMaterial(null)}>
+              <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black">{viewMaterial?.title}</DialogTitle>
+                  <DialogDescription>Original indexed content.</DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto py-6 prose prose-sm dark:prose-invert max-w-none border-y scrollbar-hide">
+                  <ReactMarkdown>{viewMaterial?.content || ''}</ReactMarkdown>
+                </div>
+                <div className="flex justify-end pt-6">
+                  <Button className="font-bold px-8 h-10" onClick={() => setViewMaterial(null)}>Close Library View</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Search */}
+            <div className="mb-8 max-w-md">
+              <Input
+                placeholder="Search your library..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-12 bg-white/50 backdrop-blur-sm border-2"
+              />
+            </div>
+
+            {isFetching ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              </div>
+            ) : filteredMaterials.length === 0 ? (
+              <Card className="border-dashed bg-muted/5 border-2">
+                <CardContent className="flex flex-col items-center justify-center py-32 text-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center mb-8 border border-primary/20">
+                    <FileText className="w-10 h-10 text-primary opacity-40" />
+                  </div>
+                  <p className="text-muted-foreground mb-10 max-w-xs">Your library is currently empty. Index documents to use them across the dashboard.</p>
+                  <Button onClick={() => setShowAddDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" /> Add First Document
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredMaterials.map((material) => (
+                  <Card
+                    key={material.id}
+                    className="group border-none shadow-xl overflow-hidden bg-white/40 dark:bg-black/20 backdrop-blur-xl ring-1 ring-white/20 hover:ring-primary/50 transition-all duration-500"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-xl font-bold line-clamp-2 leading-tight group-hover:text-primary transition-colors">{material.title}</CardTitle>
+                        <FileText className="w-5 h-5 text-primary/40 group-hover:text-primary transition-colors shrink-0 ml-2" />
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-[0.2em] mt-2">Indexed {new Date(material.createdAt).toLocaleDateString()}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground/80 line-clamp-3 leading-relaxed mb-8 h-12">
+                        {material.content}
+                      </p>
+                      <div className="flex gap-2 pt-6 border-t border-muted/20">
+                        <Button variant="outline" className="flex-1 h-10 font-bold border-muted-foreground/10 hover:bg-primary/10 hover:text-primary transition-all" onClick={() => setViewMaterial(material)}>
+                          <Eye className="w-4 h-4 mr-2" /> View
+                        </Button>
+                        {material.fileUrl && (
+                          <Button variant="outline" className="h-10 font-bold border-muted-foreground/10" asChild>
+                            <a href={material.fileUrl} target="_blank" rel="noopener noreferrer">
+                              <FileText className="w-4 h-4 mr-2" /> PDF
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDelete(material.id)}
+                          className="h-10 w-10 border-muted-foreground/10 hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground/20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>

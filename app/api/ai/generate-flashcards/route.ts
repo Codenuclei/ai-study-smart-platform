@@ -1,4 +1,5 @@
 import { generateText } from 'ai';
+import { google } from '@ai-sdk/google';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -43,7 +44,7 @@ Format each flashcard with:
 Respond with valid JSON only containing a flashcards array.`;
 
     const result = await generateText({
-      model: 'openai/gpt-4-turbo',
+      model: google('gemini-flash-latest'),
       system: 'You are an expert in creating educational flashcards. Generate clear, effective flashcards that promote learning and retention. Return valid JSON only.',
       prompt,
       temperature: 0.7,

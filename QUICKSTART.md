@@ -107,7 +107,7 @@ AI_MODEL=openai/gpt-4-turbo
 AI_MODEL=anthropic/claude-opus-4.6
 
 # Fast & Efficient
-AI_MODEL=google/gemini-3-flash
+AI_MODEL=google/gemini-flash-latest
 
 # Ultra Fast
 AI_MODEL=groq/llama-3.1-70b

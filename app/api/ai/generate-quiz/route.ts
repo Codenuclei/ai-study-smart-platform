@@ -1,20 +1,7 @@
 import { generateText } from 'ai';
+import { google } from '@ai-sdk/google';
 import { getSession } from '@/lib/auth-utils';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const quizSchema = z.object({
-  questions: z.array(
-    z.object({
-      id: z.string(),
-      question: z.string(),
-      options: z.array(z.string()),
-      correctAnswer: z.number(),
-      explanation: z.string(),
-      difficulty: z.enum(['easy', 'medium', 'hard']),
-    })
-  ),
-});
 
 export async function POST(req: Request) {
   try {
@@ -26,40 +13,55 @@ export async function POST(req: Request) {
     const { content, difficulty = 'medium', questionCount = 5 } = await req.json();
 
     if (!content) {
-      return NextResponse.json(
-        { error: 'Missing content' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing content' }, { status: 400 });
     }
 
-    const prompt = `Create ${questionCount} multiple choice quiz questions based on the following content. The difficulty level should be ${difficulty}.
+    const prompt = `Create a quiz with ${questionCount} multiple choice questions based on the following study material. 
+Difficulty: ${difficulty}
 
 Content:
 ${content}
 
-Generate quiz questions that test comprehension and critical thinking. Each question should have 4 options with only one correct answer. Include an explanation for the correct answer.
+Requirements:
+- Each question must have exactly 4 options.
+- options is an array of strings.
+- correctAnswer is the 0-based index of the correct option.
+- Include a helpful "explanation" for why the answer is correct.
+- Return ONLY valid JSON in this format:
+{
+  "title": "Quiz Title",
+  "questions": [
+    {
+      "question": "text",
+      "options": ["a", "b", "c", "d"],
+      "correctAnswer": 0,
+      "explanation": "why..."
+    }
+  ]
+}`;
 
-Respond with valid JSON only.`;
-
-    const result = await generateText({
-      model: 'openai/gpt-4-turbo',
-      system: 'You are an expert educator creating quiz questions. Generate clear, educational quiz questions with accurate answers and explanations. Return valid JSON only.',
+    const { text } = await generateText({
+      model: google('gemini-flash-latest'),
+      system: 'You are an educational content creator. You must generate valid, high-quality quiz questions in the requested JSON format. Ensure all options are plausible.',
       prompt,
       temperature: 0.7,
-      maxOutputTokens: 2000,
+      maxOutputTokens: 2500,
     });
 
     try {
-      const parsed = JSON.parse(result.text);
+      // Find the JSON part in case the model adds extra text
+      const jsonStart = text.indexOf('{');
+      const jsonEnd = text.lastIndexOf('}');
+      if (jsonStart === -1 || jsonEnd === -1) throw new Error('Invalid JSON response');
+      
+      const parsed = JSON.parse(text.substring(jsonStart, jsonEnd + 1));
       return NextResponse.json(parsed);
-    } catch {
-      return NextResponse.json({ text: result.text });
+    } catch (err) {
+      console.error('Failed to parse AI JSON:', text);
+      return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
     }
   } catch (error) {
-    console.error('Error generating quiz:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate quiz' },
-      { status: 500 }
-    );
+    console.error('[GENERATE-QUIZ]', error);
+    return NextResponse.json({ error: 'Failed to generate quiz' }, { status: 500 });
   }
 }

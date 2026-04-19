@@ -1,14 +1,9 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { db } from './db';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { users } from './schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
-import * as schema from './schema';
-
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql, { schema });
+import bcrypt from 'bcryptjs'; 
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
@@ -18,34 +13,38 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, _req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Invalid credentials');
         }
 
+        // eq expects (column, value)
         const result = await db
           .select()
           .from(users)
-          .where(eq(users.email, credentials.email))
+          .where(eq(users.email, credentials.email as string))
           .limit(1);
 
         const user = result[0];
-
         if (!user) {
           throw new Error('No user found with this email');
         }
 
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        // Ensure passwordHash is string
+        if (typeof user.passwordHash !== 'string') {
+          throw new Error('User password is not set up correctly');
+        }
 
+        const passwordMatch = await bcrypt.compare(
+          credentials.password as string,
+          user.passwordHash
+        );
         if (!passwordMatch) {
           throw new Error('Invalid password');
         }
 
         return {
-          id: user.id,
+          id: String(user.id),
           email: user.email,
           name: user.name,
         };

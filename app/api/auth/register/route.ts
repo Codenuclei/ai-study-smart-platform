@@ -1,13 +1,8 @@
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
-import * as schema from '@/lib/schema';
-
-const sql = neon(process.env.DATABASE_URL!);
-const db = drizzle(sql, { schema });
 
 export async function POST(req: Request) {
   try {
@@ -38,12 +33,12 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = await db
+    const [newUser] = await db
       .insert(users)
       .values({
         email,
         name,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         createdAt: new Date(),
       })
       .returning();
@@ -52,15 +47,15 @@ export async function POST(req: Request) {
       {
         message: 'User created successfully',
         user: {
-          id: newUser[0].id,
-          email: newUser[0].email,
-          name: newUser[0].name,
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('[API/AUTH/REGISTER] error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
