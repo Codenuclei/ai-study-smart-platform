@@ -21,10 +21,10 @@ export function DashboardHeader() {
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur-sm">
       <div className="container flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#FF9800] to-[var(--accent)]">
             <BookOpen className="w-5 h-5 text-white" />
           </div>
-          <span className="hidden sm:inline font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="hidden sm:inline font-bold text-lg bg-gradient-to-r from-[#FF9800] via-[var(--primary)] to-[var(--accent)] bg-clip-text text-transparent">
             StudyAI
           </span>
         </Link>

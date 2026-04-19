@@ -132,7 +132,7 @@ export default function ChatbotPage() {
           }],
         }),
       });
-
+      // ai response successful accept else throw err.
       if (!aiResponse.ok) throw new Error('AI request failed');
       const data = await aiResponse.json();
       const aiContent = data.text || '';
