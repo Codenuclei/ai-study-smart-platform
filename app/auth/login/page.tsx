@@ -41,18 +41,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FFF3E0] via-[var(--accent)] to-[#FFFDE7] dark:from-[#1a1200] dark:via-[var(--accent)] dark:to-[#1a1200] flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-200 dark:bg-blue-900 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-purple-200 dark:bg-purple-900 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FFECB3] dark:bg-[var(--accent)] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-[#FFE0B2] dark:bg-[var(--primary)] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-[#FF9800] to-[var(--accent)] mb-4">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#FF9800] via-[var(--primary)] to-[var(--accent)] bg-clip-text text-transparent">
             StudyAI
           </h1>
           <p className="text-muted-foreground mt-2">AI-Powered Learning Platform</p>
@@ -105,7 +105,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                className="w-full bg-gradient-to-r from-[#FF9800] to-[var(--accent)] hover:from-[#FFB300] hover:to-[var(--primary)]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -120,7 +120,7 @@ export default function LoginPage() {
 
               <p className="text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{' '}
-                <Link href="/auth/register" className="text-blue-500 hover:text-blue-600 font-medium">
+                <Link href="/auth/register" className="text-[var(--accent)] hover:text-[var(--primary)] font-medium">
                   Sign up
                 </Link>
               </p>

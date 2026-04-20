@@ -16,7 +16,7 @@ export async function ensureCollection() {
   if (!exists) {
     await client.createCollection(COLLECTION_NAME, {
       vectors: {
-        size: 768, // size for google text-embedding-004
+        size: 768, // size for google text-embedding-001
         distance: 'Cosine',
       },
     });
@@ -39,7 +39,7 @@ export async function upsertMaterial(materialId: string, title: string, content:
     
     // Generate embedding
     const { embedding } = await embed({
-      model: google.textEmbeddingModel('text-embedding-004'),
+      model: google.textEmbeddingModel('text-embedding-001'),
       value: chunk,
     });
 
@@ -65,7 +65,7 @@ export async function upsertMaterial(materialId: string, title: string, content:
 
 export async function searchMaterials(query: string, userId: string, limit = 5) {
   const { embedding } = await embed({
-    model: google.textEmbeddingModel('text-embedding-004'),
+    model: google.textEmbeddingModel('text-embedding-001'),
     value: query,
   });
 

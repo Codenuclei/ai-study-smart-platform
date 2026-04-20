@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
-import { PDFParse } from 'pdf-parse';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { getSession } from '@/lib/auth-utils';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import path from 'path';
+
+// Set the workerSrc to the installed pdfjs-dist legacy worker
+GlobalWorkerOptions.workerSrc = `file://${path.join(
+  process.cwd(),
+  'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'
+)}`;
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +25,10 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    // Convert Buffer to Uint8Array for pdfjs-dist
+    const uint8Array = new Uint8Array(buffer);
 
-    // 1. Upload to Cloudinary (optional/background)
+    // Upload to Cloudinary (optional/background)
     let fileUrl = '';
     try {
       fileUrl = await uploadToCloudinary(buffer, file.name);
@@ -27,23 +36,23 @@ export async function POST(req: Request) {
       console.warn('Cloudinary upload failed:', uploadError);
     }
 
-    // 2. Parse PDF using the v2.x class-based API
-    const parser = new PDFParse({ data: buffer });
-    const textData = await parser.getText();
-    const infoData = await parser.getInfo();
-
-    // Clean up parser resources
-    await parser.destroy();
-
-    const text = textData.text;
+    // Use pdfjs-dist to extract text
+    const loadingTask = getDocument({ data: uint8Array });
+    const pdf = await loadingTask.promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((item: any) => item.str).join(' ') + '\n';
+    }
 
     return NextResponse.json({
       text,
       fileUrl,
       metadata: {
-        pages: textData.pages.length,
-        title: infoData.info?.Title || file.name,
-        author: infoData.info?.Author || 'Unknown'
+        pages: pdf.numPages,
+        title: file.name,
+        author: 'Unknown'
       }
     });
   } catch (error) {

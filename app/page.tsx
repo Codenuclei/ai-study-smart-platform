@@ -3,6 +3,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import FAQ from '@/components/ui/FAQ';
+import { injectMicroDotBurstStyle } from '@/lib/injectMicroDotBurstStyle';
+import { injectBlobAnimationStyle } from '@/lib/injectBlobAnimationStyle';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,10 +30,19 @@ import {
 } from 'phosphor-react';
  
 
+
+
 export default function Home() {
   const { data: session, status } = useSession();
   const [mounted, setMounted] = useState(false);
 
+  // Inject the styles only once after mount
+  useEffect(() => {
+    injectMicroDotBurstStyle();
+    injectBlobAnimationStyle();
+  }, []);
+
+  // Handle session redirect and mount state
   useEffect(() => {
     setMounted(true);
     if (session?.user) {
@@ -143,12 +155,12 @@ export default function Home() {
             ].map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="p-6 card-hover border-0 shadow-lg backdrop-blur-sm" style={{ background: 'var(--card)', color: 'var(--card-foreground)' }}>
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: 'var(--card)', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.03)' }}>
+                <Card key={index} className="p-6 card-hover border-0 shadow-lg backdrop-blur-sm relative overflow-hidden micro-dot-burst" style={{ background: 'var(--card)', color: 'var(--card-foreground)' }}>
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4 relative z-10" style={{ background: 'var(--card)', boxShadow: '0 1px 4px 0 rgba(0,0,0,0.03)' }}>
                     <Icon size={28} weight="duotone" style={{ color: 'var(--primary)' }} />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>{feature.description}</p>
+                  <h3 className="font-semibold text-lg mb-2 relative z-10">{feature.title}</h3>
+                  <p className="text-sm relative z-10" style={{ color: 'var(--muted-foreground)' }}>{feature.description}</p>
                 </Card>
               );
             })}
@@ -178,6 +190,7 @@ export default function Home() {
             </div>
           </div>
 
+
           {/* CTA Section */}
           <div className="text-center py-12">
             <h2 className="text-3xl font-bold mb-4" style={{ color: 'var(--foreground)' }}>Ready to Transform Your Learning?</h2>
@@ -189,6 +202,14 @@ export default function Home() {
               </Button>
             </Link>
           </div>
+
+          {/* FAQ Section - Extreme CSS Glassmorphism & Animation */}
+          <section className="max-w-3xl mx-auto mb-32">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-12 text-[var(--foreground)] drop-shadow-lg">Frequently Asked Questions</h2>
+         <FAQ/>
+          </section>
+
+ 
         </section>
 
         {/* Footer */}
@@ -201,28 +222,6 @@ export default function Home() {
         </footer>
       </div>
 
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 }
