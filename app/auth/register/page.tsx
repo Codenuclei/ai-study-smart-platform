@@ -53,13 +53,11 @@ export default function RegisterPage() {
         email,
         password,
         redirect: false,
-        // Force JSON content type for NextAuth
-        callbackUrl: undefined, // workaround for NextAuth bug
-        headers: { 'Content-Type': 'application/json' },
       });
-
       if (signInResult?.ok) {
         router.push('/dashboard');
+      } else if (signInResult?.error) {
+        toast.error(signInResult.error);
       }
     } catch (error) {
       toast.error('An error occurred during registration');

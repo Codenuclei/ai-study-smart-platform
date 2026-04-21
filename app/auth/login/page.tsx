@@ -19,17 +19,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
-        // Force JSON content type for NextAuth
-        callbackUrl: undefined, // workaround for NextAuth bug
-        headers: { 'Content-Type': 'application/json' },
       });
-
       if (result?.error) {
         toast.error(result.error);
       } else if (result?.ok) {

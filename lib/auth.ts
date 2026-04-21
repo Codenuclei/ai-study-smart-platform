@@ -3,7 +3,8 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { users } from './schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs'; 
+import bcrypt from 'bcryptjs';
+import logger from './logger';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
@@ -39,23 +40,32 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           }
         }
         if (!email || !password) {
+          logger.error({ email, password }, 'Missing credentials');
           throw new Error('Invalid credentials');
         }
 
         // eq expects (column, value)
-        const result = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email as string))
-          .limit(1);
+        let user;
+        try {
+          const result = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email as string))
+            .limit(1);
+          user = result[0];
+        } catch (err) {
+          logger.error({ err, email }, 'DB error during login');
+          throw new Error('Database error');
+        }
 
-        const user = result[0];
         if (!user) {
+          logger.warn({ email }, 'No user found with this email');
           throw new Error('No user found with this email');
         }
 
         // Ensure passwordHash is string
         if (typeof user.passwordHash !== 'string') {
+          logger.error({ user }, 'User password is not set up correctly');
           throw new Error('User password is not set up correctly');
         }
 
@@ -64,9 +74,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           user.passwordHash
         );
         if (!passwordMatch) {
+          logger.warn({ email }, 'Invalid password');
           throw new Error('Invalid password');
         }
 
+        logger.info({ email }, 'User logged in successfully');
         return {
           id: String(user.id),
           email: user.email,
