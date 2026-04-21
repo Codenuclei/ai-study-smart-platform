@@ -13,8 +13,32 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, _req) {
-        if (!credentials?.email || !credentials?.password) {
+      async authorize(credentials, req) {
+        let email, password;
+        // Try to parse both JSON and form-urlencoded
+        if (credentials?.email && credentials?.password) {
+          email = credentials.email;
+          password = credentials.password;
+        } else if (req && req.body) {
+          // NextAuth v4+ passes req.body as a string for form submissions
+          try {
+            const contentType = req.headers?.get?.('content-type') || '';
+            if (typeof req.body === 'string') {
+              if (contentType.includes('application/json')) {
+                const parsed = JSON.parse(req.body);
+                email = parsed.email;
+                password = parsed.password;
+              } else if (contentType.includes('application/x-www-form-urlencoded')) {
+                const parsed = Object.fromEntries(new URLSearchParams(req.body));
+                email = parsed.email;
+                password = parsed.password;
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        if (!email || !password) {
           throw new Error('Invalid credentials');
         }
 
@@ -22,7 +46,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         const result = await db
           .select()
           .from(users)
-          .where(eq(users.email, credentials.email as string))
+          .where(eq(users.email, email as string))
           .limit(1);
 
         const user = result[0];
@@ -36,7 +60,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         }
 
         const passwordMatch = await bcrypt.compare(
-          credentials.password as string,
+          password as string,
           user.passwordHash
         );
         if (!passwordMatch) {
