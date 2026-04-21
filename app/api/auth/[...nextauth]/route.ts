@@ -1,7 +1,13 @@
-import { handlers } from '@/lib/auth';
 
-export async function POST(req, ctx) {
-	let body = null;
+import { handlers } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
+
+
+export async function POST(
+	req: NextRequest,
+	ctx: { params: Promise<{ nextauth: string[] }> }
+): Promise<Response> {
+	let body: any = null;
 	const contentType = req.headers.get('content-type') || '';
 	if (contentType.includes('application/json')) {
 		try {
@@ -11,8 +17,10 @@ export async function POST(req, ctx) {
 		const text = await req.text();
 		body = Object.fromEntries(new URLSearchParams(text));
 	}
+	// @ts-expect-error - NextAuth expects req.body
 	req.body = body;
+	// @ts-expect-error - NextAuth expects req.body
 	return handlers.POST(req, ctx);
 }
 
-export const GET = handlers.GET;
+export const GET: typeof handlers.GET = handlers.GET;
