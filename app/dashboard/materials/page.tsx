@@ -40,7 +40,7 @@ export default function MaterialsPage() {
     try {
       const res = await fetch('/api/materials');
       const data = await res.json();
-      setMaterials(data || []);
+      setMaterials(Array.isArray(data) ? data : []);
     } catch (e) {
       toast.error('Failed to load library');
     } finally {

@@ -6,7 +6,25 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    let email, password, name;
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const body = await req.json();
+      email = body.email;
+      password = body.password;
+      name = body.name;
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      const formData = await req.text();
+      const parsed = Object.fromEntries(new URLSearchParams(formData));
+      email = parsed.email;
+      password = parsed.password;
+      name = parsed.name;
+    } else {
+      return NextResponse.json(
+        { error: 'Unsupported content type' },
+        { status: 400 }
+      );
+    }
 
     if (!email || !password || !name) {
       return NextResponse.json(

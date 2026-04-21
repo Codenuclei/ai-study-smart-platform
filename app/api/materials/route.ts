@@ -9,7 +9,8 @@ export async function GET(req: Request) {
   try {
     const session = await getSession();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Always return an array for unauthorized
+      return NextResponse.json([], { status: 401 });
     }
 
     const mats = await db
@@ -17,13 +18,12 @@ export async function GET(req: Request) {
       .from(materials)
       .where(eq(materials.userId, session.user.id));
 
-    return NextResponse.json(mats);
+    // Always return an array
+    return NextResponse.json(mats ?? []);
   } catch (error) {
     console.error('Error fetching materials:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    // Always return an array for errors
+    return NextResponse.json([], { status: 500 });
   }
 }
 

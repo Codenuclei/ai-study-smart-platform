@@ -1,0 +1,82 @@
+-- MIGRATION: Unified schema for Drizzle/Neon/Next.js
+-- Run this after dropping old tables if needed
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- USERS TABLE
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  password_hash VARCHAR(255) NOT NULL,
+  avatar_url VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  last_login TIMESTAMPTZ
+);
+
+-- STUDY MATERIALS TABLE
+CREATE TABLE IF NOT EXISTS study_materials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(500) NOT NULL,
+  content TEXT NOT NULL,
+  description VARCHAR(1000),
+  subject VARCHAR(100),
+  file_url VARCHAR(555),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SUMMARIES TABLE
+CREATE TABLE IF NOT EXISTS summaries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  material_id UUID NOT NULL REFERENCES study_materials(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  key_points TEXT[],
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- QUIZZES TABLE
+CREATE TABLE IF NOT EXISTS quizzes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  material_id UUID NOT NULL REFERENCES study_materials(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  difficulty VARCHAR(50),
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- QUIZ QUESTIONS TABLE
+CREATE TABLE IF NOT EXISTS quiz_questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL
+);
+
+-- QUIZ ATTEMPTS TABLE
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score DECIMAL(5, 2),
+  answers TEXT[],
+  completed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- FLASHCARDS TABLE
+CREATE TABLE IF NOT EXISTS flashcards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  material_id UUID NOT NULL REFERENCES study_materials(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  front TEXT NOT NULL,
+  back TEXT NOT NULL,
+  difficulty VARCHAR(50),
+  next_review TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
