@@ -25,6 +25,9 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        // Force JSON content type for NextAuth
+        callbackUrl: undefined, // workaround for NextAuth bug
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (result?.error) {
